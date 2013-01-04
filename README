@@ -1,4 +1,5 @@
 Raspberry Pi SC1602BS(Character LCD) Device Driver
+https://twitter.com/stadaki/statuses/287182978239561729
 
 1. Overview
 1.1. Function  
@@ -52,7 +53,7 @@ uid=1000(pi) gid=1000(pi) groups=1000(pi),4(adm),20(dialout),24(cdrom),27(sudo),
    - sc1602_gpio_db7 ... Data Bit7 PIN number
 
    ex) change Register Select PIN to 0.
-   $ sudo insmod sc1602 sc1602_gpio_rs=0
+   $ sudo insmod sc1602.ko sc1602_gpio_rs=0
 
 3.2. output string
   output string to /dev/sc16020.
@@ -130,7 +131,7 @@ uid=1000(pi) gid=1000(pi) groups=1000(pi),4(adm),20(dialout),24(cdrom),27(sudo),
   sys 20m29.460s
 
 4.3. sc1602 driver build
-  $cd /home/pi/rasp-sc1602
+  $ cd /home/pi/rasp-sc1602
   $ make 2>&1 | tee make.log
 
 
