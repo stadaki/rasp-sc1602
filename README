@@ -1,0 +1,146 @@
+Raspberry Pi SC1602BS(Character LCD) Device Driver
+
+1. Overview
+1.1. Function  
+  - output string (MAX 64 character)
+  - clear display
+  - move cursor at home
+  - increment/decrement entry mode
+  - display ON/OFF
+  - set 1-line/2-line mode
+  - set coursor locate 1-line/2-line
+
+1.2. Environment
+  OS: Raspbian
+  $ uname -a
+Linux raspberrypi 3.2.27+ #250 PREEMPT Thu Oct 18 19:03:02 BST 2012 armv6l GNU/Linux
+  $ id
+uid=1000(pi) gid=1000(pi) groups=1000(pi),4(adm),20(dialout),24(cdrom),27(sudo),29(audio),44(video),46(plugdev),60(games),100(users),106(netdev),999(input)
+
+
+2. Setup
+2.1. Raspberry Pi GPIO assignment (Default)
+  [Raspberry Pi]                          [SC1602]
+   5V (PIN2)     -------------------- Vdd(PIN1)
+   GND(PIN6)     -------------------- Vss(PIN2)
+   GND(PIN9)     ---- resistance ---- Vo:ContrastADJ.(PIN3)
+                       (100 ohm)
+   GPIO10(PIN19) -------------------- Register Seclect(PIN4)
+   GND(PIN25)    -------------------- Read/Write:Write Only(PIN5)
+   GPIO9(PIN21)  -------------------- Enable Signal(PIN6)
+   GPIO25(PIN22) -------------------- Data Bit4(PIN11)
+   GPIO11(PIN23) -------------------- Data Bit5(PIN12)
+   GPIO8(PIN24)  -------------------- Data Bit6(PIN13)
+   GPIO7(PIN26)  -------------------- Data Bit7(PIN14)
+   ; See 3.1., supposing you change PIN assignment.
+
+2.2. copy udev rules file
+   $ sudo cp 51-rasp_sc1602.rules /etc/udev/rules.d/
+
+
+3. Usage
+3.1 load module
+   $ sudo insmod sc1602.ko
+   ; udevd create /dev/sc16020 automatically. 
+
+   insmod parameter
+   - sc1602_gpio_rs .... Register Select PIN number
+   - sc1602_gpio_e ..... Enable Signal PIN number
+   - sc1602_gpio_db4 ... Data Bit4  PIN number
+   - sc1602_gpio_db5 ... Data Bit5 PIN number
+   - sc1602_gpio_db6 ... Data Bit6 PIN number
+   - sc1602_gpio_db7 ... Data Bit7 PIN number
+
+   ex) change Register Select PIN to 0.
+   $ sudo insmod sc1602 sc1602_gpio_rs=0
+
+3.2. output string
+  output string to /dev/sc16020.
+
+  ex) output "Hello,"
+  $ echo "Hello," > /dev/sc16020
+
+3.3. set function
+  output function-string to /sys/class/sc1602/sc16020/control.
+
+  - clear display
+  $ echo "clear-display" > /sys/class/sc1602/sc16020/control
+
+  - move cursor at home
+  $ echo "cursor-at-home" > /sys/class/sc1602/sc16020/control
+
+  - change entry increment mode (Default)
+  $ echo "increment-mode" > /sys/class/sc1602/sc16020/control
+
+  - change entry decrement mode
+  $ echo "decrement-mode" > /sys/class/sc1602/sc16020/control
+
+  - display ON (Default)
+  $ echo "display-on" > /sys/class/sc1602/sc16020/control
+
+  - display OFF
+  $ echo "display-off" > /sys/class/sc1602/sc16020/control
+
+  - change 1-line mode
+  $ echo "1-line" > /sys/class/sc1602/sc16020/control
+
+  - change 2-line mode (Default)
+  $ echo "2-line" > /sys/class/sc1602/sc16020/control
+
+  - move cursor locate line1 (Default)
+  $ echo "locate-1" > /sys/class/sc1602/sc16020/control
+
+  - move cursor locate line2
+  $ echo "locate-2" > /sys/class/sc1602/sc16020/control
+
+  ex) output line1:"Hello,", line2:"Raspberry Pi."
+  $ echo "clear-display" > /sys/class/sc1602/sc16020/control
+  $ echo "2-line" > /sys/class/sc1602/sc16020/control
+  $ echo "locate-1" > /sys/class/sc1602/sc16020/control
+  $ echo "Hello," > /dev/sc16020
+  $ echo "locate-2" > /sys/class/sc1602/sc16020/control
+  $ echo "Raspberry Pi." > /dev/sc16020
+
+3.4. read current function
+  read /sys/class/sc1602/sc16020/control.
+
+  $ cat /sys/class/sc1602/sc16020/control 
+  control:entry_mode=increment, display=on, line-mode=2-line, line(locate)=0, col(locate)=0,
+
+3.5 unload module
+   $ sudo rmmod sc1602
+
+
+4. Self build (build on Raspberry Pi)
+4.1 get kernel source
+  $ sudo apt-get install git
+  $ git clone git://github.com/raspberrypi/linux.git -b rpi-3.2.27 /home/pi/linux-src
+
+4.2. kernel build
+  create autoconfig.h, Module.symvers for out of tree build sc1602 driver.
+  $ cd /home/pi/linux-src
+  $ sed -i 's/EXTRAVERSION =.*/EXTRAVERSION = +/' Makefile
+  $ sh -c 'zcat /proc/config.gz > .config'
+  $ make oldconfig
+  $ make 2>&1 | tee make.log
+
+  ; build time (on class10 SDcard)
+  real 501m56.126s
+  user 454m20.140s
+  sys 20m29.460s
+
+4.3. sc1602 driver build
+  $cd /home/pi/rasp-sc1602
+  $ make 2>&1 | tee make.log
+
+
+5. Cross build (build on x86 machine)
+5.1 setup cross toolchain
+  $ git clone git://github.com/raspberrypi/tools.git /home/pi/tools
+  $ export ARCH=arm
+  $ export PATH=/home/pi/tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin:$PATH
+  $ export CROSS_COMPILE=arm-bcm2708hardfp-linux-gnueabi-
+
+  The rest is the same as self build.
+  ; copy .config from running Raspbian.
+

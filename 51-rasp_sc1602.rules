@@ -1,0 +1,1 @@
+KERNEL=="sc1602[0-9]*", GROUP="pi", MODE="0664"
